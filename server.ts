@@ -16,16 +16,12 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", service: "Google AI Studio TTS Engine" });
 });
 
-// Initialize Gemini Client
+// Initialize Gemini Client using default server API key
 function getGeminiClient(req?: express.Request) {
-  const headerKey = req?.headers?.["x-gemini-api-key"] as string | undefined;
-  const bodyKey = req?.body?.customApiKey as string | undefined;
-  const apiKey = (headerKey && headerKey.trim()) || (bodyKey && bodyKey.trim()) || process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey || !apiKey.trim()) {
-    throw new Error(
-      "Missing Gemini API Key. Please click the 'API Key' button in the top bar to enter your Google Gemini API Key, or set GEMINI_API_KEY in your server environment variables."
-    );
+    throw new Error("Missing GEMINI_API_KEY environment variable on server.");
   }
   return new GoogleGenAI({
     apiKey: apiKey.trim(),
@@ -105,7 +101,7 @@ function handleGeminiError(res: express.Response, error: any, contextLabel: stri
 
   if (is403) {
     return res.status(403).json({
-      error: "403 Permission Denied: The server's default API key has been denied access by Google AI Studio. Please insert your own valid Gemini API key using the 'API Key' button at top right.",
+      error: "403 Permission Denied: Access to Gemini API was denied.",
       details: errMsg,
       isApiKeyError: true,
     });
@@ -113,7 +109,7 @@ function handleGeminiError(res: express.Response, error: any, contextLabel: stri
 
   if (isMissingKey) {
     return res.status(400).json({
-      error: "Missing Gemini API Key. Please click the 'API Key' button at top right to enter your key.",
+      error: "Missing GEMINI_API_KEY environment variable on server.",
       isApiKeyError: true,
     });
   }
@@ -127,7 +123,7 @@ function handleGeminiError(res: express.Response, error: any, contextLabel: stri
  * Helper to call Gemini TTS with model fallbacks
  */
 async function generateTtsWithModelFallback(ai: any, contents: any, speechConfig: any, temperature = 0.7) {
-  const candidateModels = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-3.1-flash-tts-preview"];
+  const candidateModels = ["gemini-3.1-flash-tts-preview", "gemini-2.5-flash-tts-preview"];
   let lastErr: any;
 
   for (const model of candidateModels) {
