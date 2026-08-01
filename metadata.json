@@ -1,0 +1,6 @@
+{
+  "name": "Google AI Studio TTS Studio",
+  "description": "Professional Text-to-Speech studio styled like Google AI Studio featuring custom voices, multi-speaker dialogue, adjustable parameters, narration styles, bulk batch processing, real-time playback, and code export.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
