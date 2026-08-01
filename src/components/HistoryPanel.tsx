@@ -25,28 +25,28 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
   return (
     <div className="flex-1 flex flex-col bg-[#131314] overflow-hidden">
       {/* Header */}
-      <div className="p-4 bg-[#1e1f22] border-b border-[#2b2d31] flex items-center justify-between">
+      <div className="p-3 sm:p-4 bg-[#1e1f22] border-b border-[#2b2d31] flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center space-x-2">
-          <History className="w-5 h-5 text-indigo-400" />
+          <History className="w-5 h-5 text-indigo-400 shrink-0" />
           <div>
-            <h2 className="text-sm font-semibold text-gray-100">Synthesized Audio History</h2>
-            <p className="text-xs text-gray-400">Review past speech outputs, reload prompts, and re-export files</p>
+            <h2 className="text-xs sm:text-sm font-semibold text-gray-100">Audio History</h2>
+            <p className="text-[11px] text-gray-400">Review past speech outputs and reload prompts</p>
           </div>
         </div>
 
         {history.length > 0 && (
           <button
             onClick={onClearHistory}
-            className="px-3 py-1.5 text-xs text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-lg transition-colors flex items-center space-x-1.5"
+            className="px-2.5 py-1 text-xs text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-lg transition-colors flex items-center space-x-1"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span>Clear History</span>
+            <span>Clear</span>
           </button>
         )}
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 p-3 sm:p-6 overflow-y-auto custom-scrollbar">
         {history.length === 0 ? (
           <div className="h-64 border-2 border-dashed border-[#2b2d31] rounded-2xl flex flex-col items-center justify-center p-6 text-center">
             <History className="w-12 h-12 text-gray-600 mb-3" />

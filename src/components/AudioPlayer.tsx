@@ -239,43 +239,62 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
   if (!audioUrl) {
     return (
-      <div className="h-20 bg-white border-t border-gray-200 px-8 flex items-center justify-between text-xs text-slate-500 font-mono select-none shrink-0">
+      <div className="min-h-16 py-3 bg-white border-t border-gray-200 px-4 sm:px-8 flex items-center justify-between text-xs text-slate-500 font-mono select-none shrink-0 mb-12 lg:mb-0">
         <div className="flex items-center space-x-2">
-          <Radio className="w-4 h-4 text-blue-600 animate-pulse" />
-          <span className="font-sans font-medium text-slate-600">Awaiting TTS generation output...</span>
+          <Radio className="w-4 h-4 text-blue-600 animate-pulse shrink-0" />
+          <span className="font-sans font-medium text-slate-600 text-xs sm:text-sm truncate">Awaiting TTS generation output...</span>
         </div>
-        <span className="text-[11px] text-slate-400">24kHz PCM Audio Engine Ready</span>
+        <span className="text-[10px] sm:text-[11px] text-slate-400 hidden sm:inline">24kHz PCM Audio Engine Ready</span>
       </div>
     );
   }
 
   return (
-    <div className="h-24 bg-white border-t border-gray-200 px-8 z-20 flex items-center justify-between gap-6 select-none shrink-0">
+    <div className="min-h-20 py-2 sm:py-3 bg-white border-t border-gray-200 px-3 sm:px-8 z-20 flex flex-wrap md:flex-nowrap items-center justify-between gap-2 sm:gap-6 select-none shrink-0 mb-12 lg:mb-0">
       <audio ref={audioRef} />
 
       {/* Info & Canvas Spectrum Visualizer */}
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
         {/* Play button */}
         <button
           onClick={togglePlay}
-          className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 shadow-md transition-all active:scale-95 shrink-0"
+          className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 shadow-md transition-all active:scale-95 shrink-0"
         >
-          {isPlaying ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current ml-0.5" />}
+          {isPlaying ? <Pause className="w-5 h-5 sm:w-6 sm:h-6 fill-current" /> : <Play className="w-5 h-5 sm:w-6 sm:h-6 fill-current ml-0.5" />}
         </button>
 
         {/* Canvas spectrum */}
-        <div className="relative w-28 h-10 bg-gray-50 border border-gray-200 rounded-lg overflow-hidden shrink-0 flex items-center justify-center">
+        <div className="relative w-20 sm:w-28 h-8 sm:h-10 bg-gray-50 border border-gray-200 rounded-lg overflow-hidden shrink-0 flex items-center justify-center hidden min-[380px]:flex">
           <canvas ref={canvasRef} width={110} height={40} className="w-full h-full" />
         </div>
 
         <div className="min-w-0 hidden sm:block">
-          <p className="text-xs font-bold text-blue-600 tracking-tight uppercase">REAL-TIME PREVIEW</p>
-          <p className="text-xs font-semibold text-slate-800 truncate">{title}</p>
-          <p className="text-[10px] text-slate-400 font-mono">Speaker: {speakerName} • Est. duration: {formatTime(duration)}</p>
+          <p className="text-[10px] font-bold text-blue-600 tracking-tight uppercase">REAL-TIME PREVIEW</p>
+          <p className="text-xs font-semibold text-slate-800 truncate max-w-[150px]">{title}</p>
+          <p className="text-[10px] text-slate-400 font-mono">Speaker: {speakerName} • {formatTime(duration)}</p>
         </div>
       </div>
 
-      {/* Center Timeline */}
+      {/* Mobile-only compact scrub slider */}
+      <div className="flex md:hidden items-center space-x-2 flex-1 min-w-[120px] font-mono text-[10px] text-slate-500">
+        <span>{formatTime(currentTime)}</span>
+        <input
+          type="range"
+          min="0"
+          max={duration || 100}
+          step="0.1"
+          value={currentTime}
+          onChange={(e) => {
+            const newTime = parseFloat(e.target.value);
+            setCurrentTime(newTime);
+            if (audioRef.current) audioRef.current.currentTime = newTime;
+          }}
+          className="flex-1 h-1.5 bg-gray-200 rounded-lg accent-blue-600 cursor-pointer"
+        />
+        <span>{formatTime(duration)}</span>
+      </div>
+
+      {/* Center Timeline (Desktop) */}
       <div className="flex-1 max-w-xl hidden md:flex flex-col items-center space-y-1.5">
         <div className="flex items-center space-x-3">
           <button
@@ -337,7 +356,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       </div>
 
       {/* Right Volume & Export Controls */}
-      <div className="flex items-center space-x-3 justify-end shrink-0">
+      <div className="flex items-center space-x-1.5 sm:space-x-3 justify-end shrink-0">
         {/* Volume */}
         <div className="hidden xl:flex items-center space-x-2">
           <button onClick={toggleMute} className="text-slate-500 hover:text-slate-800">
@@ -358,10 +377,11 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         {base64Data && (
           <button
             onClick={() => downloadAudioFile(base64Data, `google_ai_studio_tts_${Date.now()}.wav`)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-lg font-medium text-xs hover:bg-slate-800 transition-colors shadow-xs"
+            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-5 sm:py-2.5 bg-slate-900 text-white rounded-lg font-medium text-xs hover:bg-slate-800 transition-colors shadow-xs shrink-0"
           >
-            <Download className="w-4 h-4" />
-            <span>Generate / Download WAV</span>
+            <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">Download WAV</span>
+            <span className="sm:hidden">WAV</span>
           </button>
         )}
 
@@ -369,10 +389,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         {base64Data && (
           <button
             onClick={handleCopyBase64}
-            className="p-2.5 text-slate-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            className="p-1.5 sm:p-2.5 text-slate-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shrink-0"
             title="Copy Base64 Audio String"
           >
-            {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+            {copied ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
           </button>
         )}
       </div>

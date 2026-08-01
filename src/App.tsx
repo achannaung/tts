@@ -10,6 +10,7 @@ import { AudioPlayer } from './components/AudioPlayer';
 import { GetCodeModal } from './components/GetCodeModal';
 import { VoiceGalleryModal } from './components/VoiceGalleryModal';
 import { HistoryPanel } from './components/HistoryPanel';
+import { MobileNav } from './components/MobileNav';
 import {
   ActiveTab,
   SpeechParameters,
@@ -518,6 +519,13 @@ export default function App() {
         base64Data={currentAudioBase64}
         title={audioTitle}
         speakerName={audioSpeakerName}
+      />
+
+      {/* Mobile Bottom Navigation Bar */}
+      <MobileNav
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        historyCount={history.length}
       />
 
       {/* Modals */}

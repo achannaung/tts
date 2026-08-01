@@ -186,28 +186,29 @@ export const BatchProcessing: React.FC<BatchProcessingProps> = ({ onProcessItem 
   return (
     <div className="flex-1 flex flex-col bg-[#f8f9fa] overflow-hidden">
       {/* Top Banner */}
-      <div className="p-6 bg-white border-b border-gray-200 flex flex-wrap items-center justify-between gap-4">
+      <div className="p-3 sm:p-6 bg-white border-b border-gray-200 flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex items-center space-x-2">
-            <Layers className="w-5 h-5 text-blue-600" />
-            <h2 className="text-base font-bold text-slate-800">Bulk Batch Speech Processing</h2>
+            <Layers className="w-5 h-5 text-blue-600 shrink-0" />
+            <h2 className="text-sm sm:text-base font-bold text-slate-800">Bulk Batch Processing</h2>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Queue multiple audio segments, process in bulk, and download as a structured ZIP
+          <p className="text-xs text-slate-500 mt-0.5">
+            Queue multiple audio segments, process in bulk, and download as a ZIP
           </p>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 flex-wrap gap-y-2">
           {/* File Uploader */}
-          <label className="px-3.5 py-2 text-xs font-medium bg-white hover:bg-gray-50 text-slate-700 border border-gray-200 rounded-lg transition-colors cursor-pointer flex items-center space-x-1.5 shadow-2xs">
+          <label className="px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-medium bg-white hover:bg-gray-50 text-slate-700 border border-gray-200 rounded-lg transition-colors cursor-pointer flex items-center space-x-1.5 shadow-2xs">
             <Upload className="w-3.5 h-3.5 text-blue-600" />
-            <span>Import CSV / TXT</span>
+            <span className="hidden sm:inline">Import CSV / TXT</span>
+            <span className="sm:hidden">Import</span>
             <input type="file" accept=".txt,.csv" onChange={handleFileUpload} className="hidden" />
           </label>
 
           <button
             onClick={() => setShowPasteModal(true)}
-            className="px-3.5 py-2 text-xs font-medium bg-white hover:bg-gray-50 text-slate-700 border border-gray-200 rounded-lg transition-colors flex items-center space-x-1.5 shadow-2xs"
+            className="px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-medium bg-white hover:bg-gray-50 text-slate-700 border border-gray-200 rounded-lg transition-colors flex items-center space-x-1.5 shadow-2xs"
           >
             <Plus className="w-3.5 h-3.5 text-blue-600" />
             <span>Paste Lines</span>
@@ -217,7 +218,7 @@ export const BatchProcessing: React.FC<BatchProcessingProps> = ({ onProcessItem 
           <button
             onClick={handleProcessAll}
             disabled={isProcessing || batchItems.length === 0}
-            className="px-4 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all flex items-center space-x-2 shadow-xs disabled:opacity-40"
+            className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all flex items-center space-x-1.5 shadow-xs disabled:opacity-40"
           >
             {isProcessing ? (
               <>
@@ -236,17 +237,17 @@ export const BatchProcessing: React.FC<BatchProcessingProps> = ({ onProcessItem 
           <button
             onClick={handleDownloadZip}
             disabled={completedCount === 0}
-            className="px-4 py-2 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition-all flex items-center space-x-1.5 disabled:opacity-30 shadow-xs"
+            className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition-all flex items-center space-x-1.5 disabled:opacity-30 shadow-xs"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Download ZIP ({completedCount})</span>
+            <span>ZIP ({completedCount})</span>
           </button>
         </div>
       </div>
 
       {/* Progress Bar */}
       {isProcessing && (
-        <div className="w-full bg-blue-50/60 border-b border-blue-100 p-4">
+        <div className="w-full bg-blue-50/60 border-b border-blue-100 p-3 sm:p-4">
           <div className="flex justify-between text-xs text-blue-900 font-mono font-medium mb-1.5">
             <span>Bulk Batch Processing Progress</span>
             <span>{completedCount} / {totalCount} completed ({progress}%)</span>
@@ -261,7 +262,7 @@ export const BatchProcessing: React.FC<BatchProcessingProps> = ({ onProcessItem 
       )}
 
       {/* Table Container */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-8 max-w-6xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-3 sm:p-8 max-w-6xl mx-auto w-full">
         {batchItems.length === 0 ? (
           <div className="h-64 border-2 border-dashed border-gray-200 rounded-2xl bg-white flex flex-col items-center justify-center p-6 text-center">
             <FileSpreadsheet className="w-12 h-12 text-slate-300 mb-3" />
@@ -271,8 +272,8 @@ export const BatchProcessing: React.FC<BatchProcessingProps> = ({ onProcessItem 
             </p>
           </div>
         ) : (
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-2xs">
-            <table className="w-full text-left text-xs text-slate-700">
+          <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-2xs">
+            <table className="w-full text-left text-xs text-slate-700 min-w-[600px]">
               <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider border-b border-gray-200">
                 <tr>
                   <th className="p-3.5 w-12 text-center">#</th>

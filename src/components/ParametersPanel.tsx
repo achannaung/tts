@@ -90,8 +90,15 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({
   };
 
   return (
-    <aside className="w-72 bg-gray-50 border-l border-gray-200 p-5 flex flex-col shrink-0 gap-6 overflow-y-auto select-none custom-scrollbar">
-      {/* Header */}
+    <>
+      {/* Mobile Backdrop Overlay */}
+      <div
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 lg:hidden"
+        onClick={onClose}
+      />
+
+      <aside className="fixed inset-y-0 right-0 z-50 w-full max-w-xs sm:w-80 lg:static lg:z-auto lg:w-72 bg-gray-50 border-l border-gray-200 p-4 sm:p-5 flex flex-col shrink-0 gap-6 overflow-y-auto select-none custom-scrollbar shadow-2xl lg:shadow-none animate-slideInRight lg:animate-none">
+        {/* Header */}
       <div className="pb-3 border-b border-gray-200 flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <SlidersHorizontal className="w-4 h-4 text-blue-600" />
@@ -531,5 +538,6 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({
         onApplySpeed={(newSpeed) => onChange({ ...parameters, speed: newSpeed })}
       />
     </aside>
+    </>
   );
 };

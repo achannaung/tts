@@ -11,14 +11,21 @@ const PORT = 3000;
 
 app.use(express.json({ limit: "50mb" }));
 
+// Health Check Endpoint
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", service: "Google AI Studio TTS Engine" });
+});
+
 // Initialize Gemini Client
 function getGeminiClient() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    console.warn("GEMINI_API_KEY environment variable is missing.");
+    throw new Error(
+      "GEMINI_API_KEY environment variable is missing. Please set GEMINI_API_KEY in your Vercel Project Settings (Settings -> Environment Variables)."
+    );
   }
   return new GoogleGenAI({
-    apiKey: apiKey || "",
+    apiKey,
     httpOptions: {
       headers: {
         "User-Agent": "aistudio-build",
@@ -422,4 +429,8 @@ async function startServer() {
   });
 }
 
-startServer();
+export default app;
+
+if (!process.env.VERCEL) {
+  startServer();
+}

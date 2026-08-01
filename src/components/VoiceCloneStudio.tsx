@@ -284,26 +284,26 @@ export const VoiceCloneStudio: React.FC<VoiceCloneStudioProps> = ({
   return (
     <div className="flex-1 flex flex-col bg-[#f8f9fa] overflow-y-auto custom-scrollbar">
       {/* Top Banner */}
-      <div className="p-6 bg-white border-b border-gray-200">
+      <div className="p-3 sm:p-6 bg-white border-b border-gray-200">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div>
-            <div className="flex items-center space-x-2">
-              <Wand2 className="w-5 h-5 text-blue-600" />
-              <h2 className="text-lg font-bold text-slate-800 tracking-tight">
-                AI Voice Cloning & Custom Profile Creator
+            <div className="flex items-center space-x-2 flex-wrap gap-1">
+              <Wand2 className="w-5 h-5 text-blue-600 shrink-0" />
+              <h2 className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
+                AI Voice Cloning Studio
               </h2>
               <span className="text-[10px] bg-blue-50 text-blue-600 font-bold px-2 py-0.5 rounded border border-blue-200 uppercase tracking-wider">
                 Acoustic Analysis
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Upload short audio recordings to extract vocal timbre, pitch contours, cadence, and accent traits into a unique TTS voice persona.
+              Upload short audio recordings to extract vocal timbre, pitch contours, cadence, and accent traits.
             </p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto w-full p-6 md:p-8 space-y-8">
+      <div className="max-w-6xl mx-auto w-full p-3 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
         {/* Audio Quality & Requirements Instructions Card */}
         <div className="bg-gradient-to-r from-blue-50/80 via-indigo-50/50 to-white border border-blue-200/80 rounded-2xl p-6 shadow-2xs">
           <div className="flex items-center space-x-2 mb-3">
