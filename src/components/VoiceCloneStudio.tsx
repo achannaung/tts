@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { getApiHeaders } from '../lib/api';
 import {
   Mic,
   Upload,
@@ -231,7 +232,7 @@ export const VoiceCloneStudio: React.FC<VoiceCloneStudioProps> = ({
 
       const response = await fetch('/api/voice-clone/analyze', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getApiHeaders(),
         body: JSON.stringify({
           audioBase64: payloadBase64,
           mimeType: payloadMimeType,

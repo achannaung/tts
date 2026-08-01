@@ -9,8 +9,10 @@ import { VoiceCloneStudio } from './components/VoiceCloneStudio';
 import { AudioPlayer } from './components/AudioPlayer';
 import { GetCodeModal } from './components/GetCodeModal';
 import { VoiceGalleryModal } from './components/VoiceGalleryModal';
+import { ApiKeyModal } from './components/ApiKeyModal';
 import { HistoryPanel } from './components/HistoryPanel';
 import { MobileNav } from './components/MobileNav';
+import { getApiHeaders } from './lib/api';
 import {
   ActiveTab,
   SpeechParameters,
@@ -80,7 +82,22 @@ export default function App() {
   // Modals & Panels
   const [isGetCodeOpen, setIsGetCodeOpen] = useState(false);
   const [isVoiceGalleryOpen, setIsVoiceGalleryOpen] = useState(false);
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [isParametersOpen, setIsParametersOpen] = useState(true);
+
+  // Custom Gemini API Key State
+  const [customApiKey, setCustomApiKey] = useState<string>(() => {
+    return localStorage.getItem('custom_gemini_api_key') || '';
+  });
+
+  const handleSaveApiKey = (key: string) => {
+    setCustomApiKey(key);
+    if (key) {
+      localStorage.setItem('custom_gemini_api_key', key);
+    } else {
+      localStorage.removeItem('custom_gemini_api_key');
+    }
+  };
 
   // Audio History
   const [history, setHistory] = useState<AudioHistoryItem[]>([]);
@@ -179,7 +196,7 @@ export default function App() {
     try {
       const response = await fetch('/api/tts/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getApiHeaders(),
         body: JSON.stringify({
           text: scriptText,
           voiceName: parameters.voiceName,
@@ -197,6 +214,9 @@ export default function App() {
       const data = await response.json();
 
       if (!response.ok) {
+        if (data.error && (data.error.includes('API Key') || data.error.includes('GEMINI_API_KEY') || data.error.includes('missing'))) {
+          setIsApiKeyModalOpen(true);
+        }
         throw new Error(data.error || 'Failed to synthesize speech');
       }
 
@@ -253,12 +273,15 @@ export default function App() {
     try {
       const response = await fetch('/api/tts/multi-generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getApiHeaders(),
         body: JSON.stringify({ turns }),
       });
 
       const data = await response.json();
       if (!response.ok) {
+        if (data.error && (data.error.includes('API Key') || data.error.includes('GEMINI_API_KEY') || data.error.includes('missing'))) {
+          setIsApiKeyModalOpen(true);
+        }
         throw new Error(data.error || 'Failed to generate dialogue audio');
       }
 
@@ -300,7 +323,7 @@ export default function App() {
 
     const response = await fetch('/api/tts/generate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getApiHeaders(),
       body: JSON.stringify({
         text: item.text,
         voiceName: item.voiceName,
@@ -316,6 +339,9 @@ export default function App() {
 
     const data = await response.json();
     if (!response.ok) {
+      if (data.error && (data.error.includes('API Key') || data.error.includes('GEMINI_API_KEY') || data.error.includes('missing'))) {
+        setIsApiKeyModalOpen(true);
+      }
       throw new Error(data.error || 'Batch item failed');
     }
 
@@ -331,7 +357,7 @@ export default function App() {
     try {
       const response = await fetch('/api/ai/polish-script', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getApiHeaders(),
         body: JSON.stringify({
           text: scriptText,
           targetStyle: parameters.style,
@@ -390,6 +416,8 @@ export default function App() {
         onOpenVoiceGallery={() => setIsVoiceGalleryOpen(true)}
         toggleParametersDrawer={() => setIsParametersOpen(!isParametersOpen)}
         isParametersOpen={isParametersOpen}
+        onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
+        hasCustomApiKey={!!customApiKey}
       />
 
       {/* Main Studio Body Workspace */}
@@ -549,6 +577,13 @@ export default function App() {
         isOpen={isVoiceGalleryOpen}
         onClose={() => setIsVoiceGalleryOpen(false)}
         onTestVoiceSample={handleTestVoiceSample}
+      />
+
+      <ApiKeyModal
+        isOpen={isApiKeyModalOpen}
+        onClose={() => setIsApiKeyModalOpen(false)}
+        apiKey={customApiKey}
+        onSaveApiKey={handleSaveApiKey}
       />
     </div>
   );

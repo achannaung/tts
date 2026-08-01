@@ -17,15 +17,18 @@ app.get("/api/health", (req, res) => {
 });
 
 // Initialize Gemini Client
-function getGeminiClient() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+function getGeminiClient(req?: express.Request) {
+  const headerKey = req?.headers?.["x-gemini-api-key"] as string | undefined;
+  const bodyKey = req?.body?.customApiKey as string | undefined;
+  const apiKey = (headerKey && headerKey.trim()) || (bodyKey && bodyKey.trim()) || process.env.GEMINI_API_KEY;
+
+  if (!apiKey || !apiKey.trim()) {
     throw new Error(
-      "GEMINI_API_KEY environment variable is missing. Please set GEMINI_API_KEY in your Vercel Project Settings (Settings -> Environment Variables)."
+      "Missing Gemini API Key. Please click the 'API Key' button in the top bar to enter your Google Gemini API Key, or set GEMINI_API_KEY in your server environment variables."
     );
   }
   return new GoogleGenAI({
-    apiKey,
+    apiKey: apiKey.trim(),
     httpOptions: {
       headers: {
         "User-Agent": "aistudio-build",
@@ -87,7 +90,7 @@ app.post("/api/tts/generate", async (req, res) => {
       return res.status(400).json({ error: "Text prompt is required" });
     }
 
-    const ai = getGeminiClient();
+    const ai = getGeminiClient(req);
 
     // Construct expressive prompt with tone/accent/style directives
     let styleDirections = [];
@@ -159,7 +162,7 @@ app.post("/api/tts/multi-generate", async (req, res) => {
       return res.status(400).json({ error: "Dialogue turns are required" });
     }
 
-    const ai = getGeminiClient();
+    const ai = getGeminiClient(req);
 
     // Map unique speakers
     const speakerMap = new Map<string, string>(); // speakerName -> voiceName
@@ -256,7 +259,7 @@ app.post("/api/ai/polish-script", async (req, res) => {
       return res.status(400).json({ error: "Text is required" });
     }
 
-    const ai = getGeminiClient();
+    const ai = getGeminiClient(req);
 
     let styleGuide = "";
     if (mode === "expressive") {
@@ -307,7 +310,7 @@ app.post("/api/voice-clone/analyze", async (req, res) => {
   try {
     const { audioBase64, mimeType = "audio/wav", name = "Cloned Voice", description = "" } = req.body;
 
-    const ai = getGeminiClient();
+    const ai = getGeminiClient(req);
     const parts: any[] = [];
 
     // Clean base64 string if data URI header is present

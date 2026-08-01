@@ -1,5 +1,5 @@
 import React from 'react';
-import { Volume2, Code2, Sparkles, Share2, Play, Users, Layers, SlidersHorizontal, Wand2 } from 'lucide-react';
+import { Volume2, Code2, Sparkles, Share2, Play, Users, Layers, SlidersHorizontal, Wand2, Key } from 'lucide-react';
 import { ActiveTab } from '../types';
 
 interface HeaderProps {
@@ -11,6 +11,8 @@ interface HeaderProps {
   onOpenVoiceGallery: () => void;
   toggleParametersDrawer: () => void;
   isParametersOpen: boolean;
+  onOpenApiKeyModal: () => void;
+  hasCustomApiKey: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -22,6 +24,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenVoiceGallery,
   toggleParametersDrawer,
   isParametersOpen,
+  onOpenApiKeyModal,
+  hasCustomApiKey,
 }) => {
   return (
     <header className="h-14 bg-white border-b border-gray-200 px-2 sm:px-6 flex items-center justify-between select-none z-30 shrink-0 gap-1.5 sm:gap-4 overflow-x-auto no-scrollbar">
@@ -98,6 +102,22 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Right action controls */}
       <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
+        <button
+          onClick={onOpenApiKeyModal}
+          className={`p-1.5 sm:px-3 sm:py-1.5 text-xs font-semibold rounded-md border transition-colors flex items-center space-x-1.5 shadow-xs ${
+            hasCustomApiKey
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+              : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
+          }`}
+          title="Configure Gemini API Key"
+        >
+          <Key className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+          <span className="hidden md:inline">
+            {hasCustomApiKey ? 'API Key Set' : 'API Key'}
+          </span>
+          <span className={`w-2 h-2 rounded-full ${hasCustomApiKey ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+        </button>
+
         <button
           onClick={onOpenVoiceGallery}
           className="p-1.5 sm:px-3.5 sm:py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-gray-50 border border-gray-300 rounded-md transition-colors flex items-center space-x-1.5 shadow-xs"

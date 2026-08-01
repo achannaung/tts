@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getApiHeaders } from '../lib/api';
 import {
   Wand2,
   X,
@@ -108,7 +109,7 @@ export const ScriptPolishModal: React.FC<ScriptPolishModalProps> = ({
     try {
       const response = await fetch('/api/ai/polish-script', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getApiHeaders(),
         body: JSON.stringify({
           text: initialText,
           targetStyle,
