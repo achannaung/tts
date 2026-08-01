@@ -49,6 +49,20 @@ async function callGeminiWithRetry<T>(fn: () => Promise<T>, maxAttempts = 2, del
     } catch (err: any) {
       lastError = err;
       const errMsg = String(err?.message || err);
+
+      // Do NOT retry on 403 / Permission Denied / Invalid API key errors
+      const isAuthError =
+        err?.status === 403 ||
+        err?.statusCode === 403 ||
+        errMsg.includes("403") ||
+        errMsg.includes("PERMISSION_DENIED") ||
+        errMsg.includes("API_KEY_INVALID") ||
+        errMsg.includes("API key not valid");
+
+      if (isAuthError) {
+        throw err;
+      }
+
       const isTimeoutOrFetchErr =
         err?.name === "TypeError" ||
         errMsg.includes("fetch failed") ||
@@ -60,12 +74,100 @@ async function callGeminiWithRetry<T>(fn: () => Promise<T>, maxAttempts = 2, del
       console.warn(`Gemini API call attempt ${attempt}/${maxAttempts} failed: ${errMsg}`);
       if (attempt < maxAttempts && isTimeoutOrFetchErr) {
         await new Promise((resolve) => setTimeout(resolve, delayMs * attempt));
-      } else if (attempt >= maxAttempts) {
+      } else {
         throw err;
       }
     }
   }
   throw lastError;
+}
+
+/**
+ * Helper to handle and format Gemini API errors consistently across endpoints
+ */
+function handleGeminiError(res: express.Response, error: any, contextLabel: string) {
+  console.error(`Error in ${contextLabel}:`, error?.message || error);
+  const errMsg = String(error?.message || error?.error?.message || error || "");
+  const errCode = error?.status || error?.statusCode || error?.code || error?.error?.code;
+
+  const is403 =
+    errCode === 403 ||
+    errMsg.includes("403") ||
+    errMsg.includes("PERMISSION_DENIED") ||
+    errMsg.includes("denied access") ||
+    errMsg.includes("API_KEY_INVALID") ||
+    errMsg.includes("API key not valid") ||
+    errMsg.includes("Forbidden");
+
+  const isMissingKey =
+    errMsg.includes("Missing Gemini API Key") ||
+    errMsg.includes("GEMINI_API_KEY");
+
+  if (is403) {
+    return res.status(403).json({
+      error: "403 Permission Denied: The server's default API key has been denied access by Google AI Studio. Please insert your own valid Gemini API key using the 'API Key' button at top right.",
+      details: errMsg,
+      isApiKeyError: true,
+    });
+  }
+
+  if (isMissingKey) {
+    return res.status(400).json({
+      error: "Missing Gemini API Key. Please click the 'API Key' button at top right to enter your key.",
+      isApiKeyError: true,
+    });
+  }
+
+  return res.status(500).json({
+    error: errMsg || `Failed to process request in ${contextLabel}`,
+  });
+}
+
+/**
+ * Helper to call Gemini TTS with model fallbacks
+ */
+async function generateTtsWithModelFallback(ai: any, contents: any, speechConfig: any, temperature = 0.7) {
+  const candidateModels = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-3.1-flash-tts-preview"];
+  let lastErr: any;
+
+  for (const model of candidateModels) {
+    try {
+      console.log(`Attempting TTS generation with model: ${model}`);
+      const response = await callGeminiWithRetry(() =>
+        ai.models.generateContent({
+          model,
+          contents,
+          config: {
+            responseModalities: [Modality.AUDIO],
+            temperature: Math.min(Math.max(temperature, 0), 1),
+            speechConfig,
+          },
+        })
+      );
+
+      const candidatePart = (response as any)?.candidates?.[0]?.content?.parts?.[0];
+      const base64Audio = candidatePart?.inlineData?.data;
+      if (base64Audio) {
+        return base64Audio;
+      }
+    } catch (err: any) {
+      lastErr = err;
+      const errMsg = String(err?.message || err);
+      // Immediately rethrow 403 PERMISSION_DENIED or Auth errors
+      if (
+        err?.status === 403 ||
+        err?.statusCode === 403 ||
+        errMsg.includes("403") ||
+        errMsg.includes("PERMISSION_DENIED") ||
+        errMsg.includes("denied access")
+      ) {
+        throw err;
+      }
+      console.warn(`TTS model ${model} failed, trying next candidate. Error: ${errMsg}`);
+    }
+  }
+
+  throw lastErr || new Error("Failed to generate audio from Gemini TTS models");
 }
 
 /**
@@ -111,31 +213,20 @@ app.post("/api/tts/generate", async (req, res) => {
 
     console.log(`Generating TTS with voice: ${targetVoice}, speaker: ${speakerName}, style: ${style}`);
 
-    const response = await callGeminiWithRetry(() =>
-      ai.models.generateContent({
-        model: "gemini-3.1-flash-tts-preview",
-        contents: [{ parts: [{ text: formattedPrompt }] }],
-        config: {
-          responseModalities: [Modality.AUDIO],
-          temperature: Math.min(Math.max(temperature, 0), 1),
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: {
-                voiceName: targetVoice,
-              },
-            },
-          },
+    const speechConfig = {
+      voiceConfig: {
+        prebuiltVoiceConfig: {
+          voiceName: targetVoice,
         },
-      })
+      },
+    };
+
+    const base64Audio = await generateTtsWithModelFallback(
+      ai,
+      [{ parts: [{ text: formattedPrompt }] }],
+      speechConfig,
+      temperature
     );
-
-    const candidatePart = response.candidates?.[0]?.content?.parts?.[0];
-    const base64Audio = candidatePart?.inlineData?.data;
-
-    if (!base64Audio) {
-      console.error("No audio data returned from Gemini TTS API", response);
-      return res.status(500).json({ error: "Failed to generate audio output from Gemini TTS" });
-    }
 
     return res.json({
       audioBase64: base64Audio,
@@ -144,10 +235,7 @@ app.post("/api/tts/generate", async (req, res) => {
       text,
     });
   } catch (error: any) {
-    console.error("Error in /api/tts/generate:", error);
-    return res.status(500).json({
-      error: error.message || "Failed to generate audio",
-    });
+    return handleGeminiError(res, error, "/api/tts/generate");
   }
 });
 
@@ -218,34 +306,25 @@ app.post("/api/tts/multi-generate", async (req, res) => {
       ];
     }
 
-    const response = await callGeminiWithRetry(() =>
-      ai.models.generateContent({
-        model: "gemini-3.1-flash-tts-preview",
-        contents: [{ parts: [{ text: prompt }] }],
-        config: {
-          responseModalities: ["AUDIO" as any],
-          speechConfig: {
-            multiSpeakerVoiceConfig: {
-              speakerVoiceConfigs,
-            },
-          },
-        },
-      })
+    const speechConfig = {
+      multiSpeakerVoiceConfig: {
+        speakerVoiceConfigs,
+      },
+    };
+
+    const base64Audio = await generateTtsWithModelFallback(
+      ai,
+      [{ parts: [{ text: prompt }] }],
+      speechConfig,
+      0.7
     );
-
-    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-
-    if (!base64Audio) {
-      return res.status(500).json({ error: "Failed to generate multi-speaker audio" });
-    }
 
     return res.json({
       audioBase64: base64Audio,
       turnCount: turns.length,
     });
   } catch (error: any) {
-    console.error("Error in /api/tts/multi-generate:", error);
-    return res.status(500).json({ error: error.message || "Failed to generate multi-speaker audio" });
+    return handleGeminiError(res, error, "/api/tts/multi-generate");
   }
 });
 
@@ -298,8 +377,7 @@ ${styleGuide}
     const polishedText = response.text ? response.text.trim() : text;
     return res.json({ polishedText, mode, targetStyle });
   } catch (error: any) {
-    console.error("Error in /api/ai/polish-script:", error);
-    return res.status(500).json({ error: error.message || "Failed to polish script" });
+    return handleGeminiError(res, error, "/api/ai/polish-script");
   }
 });
 
@@ -399,8 +477,7 @@ Return strictly a raw JSON object (WITHOUT markdown formatting, no \`\`\`json bl
 
     return res.json({ clonedVoice });
   } catch (error: any) {
-    console.error("Error in /api/voice-clone/analyze:", error);
-    return res.status(500).json({ error: error.message || "Failed to analyze voice audio sample" });
+    return handleGeminiError(res, error, "/api/voice-clone/analyze");
   }
 });
 

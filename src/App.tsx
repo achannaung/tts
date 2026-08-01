@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AlertTriangle, Key, X } from 'lucide-react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { PromptEditor } from './components/PromptEditor';
@@ -84,6 +85,7 @@ export default function App() {
   const [isVoiceGalleryOpen, setIsVoiceGalleryOpen] = useState(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [isParametersOpen, setIsParametersOpen] = useState(true);
+  const [apiErrorMsg, setApiErrorMsg] = useState<string | null>(null);
 
   // Custom Gemini API Key State
   const [customApiKey, setCustomApiKey] = useState<string>(() => {
@@ -92,6 +94,7 @@ export default function App() {
 
   const handleSaveApiKey = (key: string) => {
     setCustomApiKey(key);
+    setApiErrorMsg(null);
     if (key) {
       localStorage.setItem('custom_gemini_api_key', key);
     } else {
@@ -259,7 +262,10 @@ export default function App() {
 
       setHistory((prev) => [historyItem, ...prev]);
     } catch (error: any) {
-      alert(`Synthesis Error: ${error.message || 'Server error'}`);
+      setApiErrorMsg(error.message || 'Server error during speech synthesis');
+      if (error.message?.includes('403') || error.message?.includes('API Key') || error.message?.includes('Permission Denied')) {
+        setIsApiKeyModalOpen(true);
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -279,7 +285,7 @@ export default function App() {
 
       const data = await response.json();
       if (!response.ok) {
-        if (data.error && (data.error.includes('API Key') || data.error.includes('GEMINI_API_KEY') || data.error.includes('missing'))) {
+        if (data.error && (data.error.includes('API Key') || data.error.includes('403') || data.error.includes('GEMINI_API_KEY') || data.error.includes('missing'))) {
           setIsApiKeyModalOpen(true);
         }
         throw new Error(data.error || 'Failed to generate dialogue audio');
@@ -311,7 +317,10 @@ export default function App() {
 
       setHistory((prev) => [historyItem, ...prev]);
     } catch (error: any) {
-      alert(`Multi-Speaker Error: ${error.message}`);
+      setApiErrorMsg(error.message || 'Failed to generate dialogue audio');
+      if (error.message?.includes('403') || error.message?.includes('API Key') || error.message?.includes('Permission Denied')) {
+        setIsApiKeyModalOpen(true);
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -339,8 +348,9 @@ export default function App() {
 
     const data = await response.json();
     if (!response.ok) {
-      if (data.error && (data.error.includes('API Key') || data.error.includes('GEMINI_API_KEY') || data.error.includes('missing'))) {
+      if (data.error && (data.error.includes('API Key') || data.error.includes('403') || data.error.includes('GEMINI_API_KEY') || data.error.includes('missing'))) {
         setIsApiKeyModalOpen(true);
+        setApiErrorMsg(data.error);
       }
       throw new Error(data.error || 'Batch item failed');
     }
@@ -367,9 +377,15 @@ export default function App() {
       const data = await response.json();
       if (response.ok && data.polishedText) {
         setScriptText(data.polishedText);
+      } else if (!response.ok && data.error) {
+        setApiErrorMsg(data.error);
+        if (data.error.includes('403') || data.error.includes('API Key') || data.error.includes('Permission Denied')) {
+          setIsApiKeyModalOpen(true);
+        }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Polish failed:', err);
+      setApiErrorMsg(err?.message || 'Script polish failed');
     } finally {
       setIsPolishing(false);
     }
@@ -419,6 +435,31 @@ export default function App() {
         onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
         hasCustomApiKey={!!customApiKey}
       />
+
+      {/* Global API Key / Permission Error Alert Banner */}
+      {apiErrorMsg && (
+        <div className="bg-rose-900/95 border-b border-rose-700/80 px-4 py-2.5 text-xs text-rose-100 flex flex-wrap items-center justify-between gap-2 z-30 shrink-0 animate-fadeIn">
+          <div className="flex items-center space-x-2">
+            <AlertTriangle className="w-4 h-4 text-rose-300 shrink-0" />
+            <span className="font-medium">{apiErrorMsg}</span>
+          </div>
+          <div className="flex items-center space-x-2 shrink-0">
+            <button
+              onClick={() => setIsApiKeyModalOpen(true)}
+              className="px-2.5 py-1 font-bold bg-white text-rose-900 hover:bg-rose-50 rounded transition-colors flex items-center space-x-1 shadow-xs text-[11px]"
+            >
+              <Key className="w-3.5 h-3.5" />
+              <span>Insert API Key</span>
+            </button>
+            <button
+              onClick={() => setApiErrorMsg(null)}
+              className="p-1 text-rose-300 hover:text-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Studio Body Workspace */}
       <div className="flex-1 flex overflow-hidden relative">
